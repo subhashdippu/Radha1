@@ -5,6 +5,9 @@ import ItemList from "./itemList";
 const Items = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   const token = localStorage.getItem("token");
 
@@ -13,7 +16,6 @@ const Items = () => {
       window.location.href = "/signin";
       return;
     }
-
     fetchItems();
   }, []);
 
@@ -43,14 +45,39 @@ const Items = () => {
   };
 
   const handleEdit = (item) => {
-    console.log("Edit item:", item);
+    setEditingItem(item);
+    setEditTitle(item.title);
+    setEditDescription(item.description);
+  };
+
+  const saveEdit = async () => {
+    try {
+      const res = await axios.put(
+        "http://localhost:3000/api/items",
+        {
+          id: editingItem._id,
+          title: editTitle,
+          description: editDescription,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setItems((prev) =>
+        prev.map((item) => (item._id === res.data._id ? res.data : item))
+      );
+      setEditingItem(null);
+    } catch (err) {
+      console.error("Edit failed", err);
+    }
   };
 
   if (loading) return <p className="text-center mt-10">Loading items...</p>;
   if (!items.length) return <p className="text-center mt-10">No items found</p>;
 
   return (
-    <div className="px-4 py-6">
+    <div className="px-4 py-6 space-y-4">
       {items.map((item) => (
         <ItemList
           key={item._id}
@@ -59,6 +86,39 @@ const Items = () => {
           onEdit={handleEdit}
         />
       ))}
+
+      {/* Edit Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
+            <h2 className="text-lg font-bold mb-4">Edit Item</h2>
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="Title"
+              className="input input-bordered w-full mb-3"
+            />
+            <textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Description"
+              className="input input-bordered w-full mb-3"
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                className="btn btn-error"
+                onClick={() => setEditingItem(null)}
+              >
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={saveEdit}>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
