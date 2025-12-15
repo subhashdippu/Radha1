@@ -30,13 +30,34 @@ const Items = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete("http://localhost:3000/api/items", {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { id },
+      });
+      setItems((prev) => prev.filter((item) => item._id !== id));
+    } catch (err) {
+      console.error("Delete failed", err);
+    }
+  };
+
+  const handleEdit = (item) => {
+    console.log("Edit item:", item);
+  };
+
   if (loading) return <p className="text-center mt-10">Loading items...</p>;
   if (!items.length) return <p className="text-center mt-10">No items found</p>;
 
   return (
     <div className="px-4 py-6">
       {items.map((item) => (
-        <ItemList key={item._id} item={item} />
+        <ItemList
+          key={item._id}
+          item={item}
+          onDelete={handleDelete}
+          onEdit={handleEdit}
+        />
       ))}
     </div>
   );
